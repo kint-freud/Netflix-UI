@@ -1,0 +1,286 @@
+ionic start Netflix tabs --type=angular --capacitor
+cd Netflix
+
+# Les pages
+ionic g page tab4
+ionic g page modal
+
+# Les Directives
+ionic g module directives/sharedDirectives --flat
+ionic g directive directives/hideHeader
+
+# Nos components
+ionic g module components/sharedComponents --flat
+ionic g component components/drawer
+ionic g service services/drawer
+
+
+#######Tabs.ts
+
+ constructor(
+    private drawerService: DrawerService,
+    private changeDetectorRef: ChangeDetectorRef
+  ) {
+    this.drawerService.drawerOpen.subscribe((drawerData) => {
+      if (drawerData && drawerData.open) {
+        this.drawer.openDrawer(drawerData.title);
+      }
+    });
+  }
+
+  setSelectedTab() {
+    this.selected = this.tabs.getSelected();
+  }
+
+  closeDrawer() {
+    this.drawer.closeDrawer();
+  }
+
+  toggleBackdrop(isVisible) {
+    this.backdropVisible = isVisible;
+    this.changeDetectorRef.detectChanges();
+  }
+
+
+  ##########tabs.html
+
+    <div class="backdrop" [ngClass]="backdropVisible ? 'fade-in' : 'fade'" tappable (click)="closeDrawer()"></div>
+
+  <ion-tab-bar slot="bottom" color="dark">
+    <ion-tab-button tab="tab1">
+      <ion-icon [name]="selected === 'tab1' ? 'home' : 'home-outline'"></ion-icon>
+      <ion-label>Home</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button tab="tab2">
+      <ion-icon [name]="selected === 'tab2' ? 'copy' : 'copy-outline'"></ion-icon>
+      <ion-label>Coming Soon</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button tab="tab3">
+      <ion-icon [name]="selected === 'tab3' ? 'search' : 'search-outline'"></ion-icon>
+      <ion-label>Search</ion-label>
+    </ion-tab-button>
+
+    <ion-tab-button tab="tab4">
+      <ion-icon [name]="selected === 'tab4' ? 'download' : 'download-outline'"></ion-icon>
+      <ion-label>Downloads</ion-label>
+    </ion-tab-button>
+  </ion-tab-bar>
+
+  </ion-tabs>
+
+<app-drawer (openStateChanged)="toggleBackdrop($event)"></app-drawer>
+
+
+####### ACCEUIL.TS
+
+  opts = {
+    slidesPerView: 2.4,
+    spaceBetween: 10,
+    freeMode: true,
+  };
+
+  constructor(
+    private modalCtrl: ModalController,
+    private drawerService: DrawerService
+  ) {}
+
+  async openCategories() {
+    const modal = await this.modalCtrl.create({
+      component: ModalPage,
+      cssClass: 'transparent-modal',
+    // enterAnimation: modalEnterAnimation,
+    // leaveAnimation: modalLeaveAnimation,
+    });
+
+    await modal.present();
+  }
+
+  openInfo(series) {
+    this.drawerService.openDrawer(series.title);
+  }
+
+
+
+  ######### ACCEUIL.html
+
+    <div class="spotlight" [style.background-image]="'url(/assets/mockdata/'+spotlight.id+'-cover.jpg)'">
+    <div class="gradient"></div>
+    <div class="info">
+      <img class="title" [src]="'/assets/mockdata/'+spotlight.id+'-title.png'">
+      <span class="rating">{{ spotlight.rating }}</span>
+      <ion-row class="ion-align-items-center">
+        <ion-col size="4" class="ion-tex-center">
+          <div class="btn-vertical">
+            <ion-icon name="add"></ion-icon>
+            <span>My List</span>
+          </div>
+        </ion-col>
+        <ion-col size="4" class="ion-tex-center">
+          <div class="btn-play">
+            <ion-icon name="play" color="dark"></ion-icon>
+            <span>Play</span>
+          </div>
+        </ion-col>
+        <ion-col size="4" class="ion-tex-center">
+          <div class="btn-vertical">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            <span>Info</span>
+          </div>
+        </ion-col>
+      </ion-row>
+    </div>
+  </div>
+
+  <div *ngFor="let section of sections" class="ion-padding">
+    <span class="section-title">{{ section.title }}</span>
+    <ion-slides [options]="opts">
+
+      <ion-slide *ngFor="let series of section.series">
+        <img *ngIf="section.type !== 'continue'" [src]="'/assets/mockdata/'+section.type+'-'+series.id+'.jpg'">
+        <div class="continue" *ngIf="section.type === 'continue'">
+
+          <img [src]="'/assets/mockdata/'+section.type+'-'+series.id+'.jpg'">
+          <div class="progress-bar">
+            <div class="progress" [style.width]="series.progress + '%'"></div>
+          </div>
+          <ion-row class="ion-no-padding">
+            <ion-col size="6" class="ion-text-left ion-no-padding">
+              <ion-button fill="clear" color="medium" size="small">
+                <ion-icon name="information-circle-outline" slot="icon-only"></ion-icon>
+              </ion-button>
+            </ion-col>
+            <ion-col size="6" class="ion-text-right ion-no-padding">
+              <ion-button fill="clear" (click)="openInfo(series)" color="medium" size="small">
+                <ion-icon name="ellipsis-vertical" slot="icon-only"></ion-icon>
+              </ion-button>
+            </ion-col>
+          </ion-row>
+        </div>
+      </ion-slide>
+
+    </ion-slides>
+  </div>
+
+
+
+  ############ACCEUIL.scssss
+
+  // General styling
+ion-content {
+  --offset-top: 0px;
+  position: absolute;
+}
+
+.section-title {
+  font-weight: 600;
+  font-size: large;
+}
+
+ion-slides {
+  margin-top: 4px;
+}
+
+.continue {
+  background: #191919;
+}
+
+// Progress bar inside slides
+.progress-bar {
+  height: 2px;
+  width: 100%;
+  background: #262626;
+
+  .progress {
+    background: #E40A15;
+    height: 100%;
+  }
+}
+
+// Spotlight section with gradient background
+.spotlight {
+  width: 100%;
+  height: 50vh;
+  background-position: center;
+  background-size: cover;
+  margin-bottom: 20px;
+  position: relative;
+
+  // Image overlay gradient
+  .gradient {
+    background: linear-gradient(#ffffff00 40%, #000000c2, #000 95%);
+    width: 100%;
+    height: 100%;
+  }
+
+  .info {
+    width: 100%;
+    position: absolute;
+    bottom: 10px;
+    text-align: center;
+
+    img {
+      max-width: 50%;
+    }
+
+    .rating {
+      display: block;
+      font-weight: 700;
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+
+    // Action button row
+    .btn-vertical {
+      font-weight: 500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .btn-play {
+      background: #fff;
+      font-weight: 500;
+      border-radius: 2px;
+      color: #000;
+      padding: 4px;
+
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}
+
+// Header area
+.logo {
+  margin-left: 16px;
+  width: 20px;
+}
+
+ion-toolbar {
+  --background: linear-gradient(180deg, rgba(0, 0, 0, 0.8715861344537815) 0%, rgba(0, 0, 0, 0.8463760504201681) 57%, rgba(0, 0, 0, 0.6923144257703081) 80%, rgba(0, 0, 0, 0.5438550420168067) 89%, rgba(0, 0, 0, 0) 100%);
+}
+
+
+####### hide header.ts ###############
+
+    if (scrollTop < 0) {
+      return;
+    }
+
+    let newPosition = -scrollTop / 2;
+
+    if (newPosition < -this.headerHeight) {
+      newPosition = -this.headerHeight;
+    }
+    let newOpacity = 1 - newPosition / -this.headerHeight;
+
+    this.domCtrl.write(() => {
+      this.renderer.setStyle(this.header, 'top', newPosition + 'px');
+      for (const c of this.children) {
+        this.renderer.setStyle(c, 'opacity', newOpacity);
+      }
+    });
